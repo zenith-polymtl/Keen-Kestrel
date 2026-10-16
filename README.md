@@ -290,6 +290,8 @@ make check-world WORLD=medicine_hat  # dans un 2e terminal : vol de validation (
 
 **Licences et attributions.** Relief : NRCan (OGL-Canada), City of Medicine Hat (licence ouverte). Ortho : Esri, Vantor, Earthstar Geographics; City of Medicine Hat (conditions Esri, voir `worlds/medicine_hat/ortho/LISEZMOI.md`). Sentinel-2 : Copernicus. Éoliennes : OpenStreetMap (ODbL). Liste dans `build/site_meta.json`. Les sorties (`build/`) et téléchargements (`cache/`) sont ignorés par git : ils se régénèrent.
 
+**Assets et prototypes.** `worlds/assets/` rassemble du matériel libre pas encore branché : textures d'herbe CC0, cerfs CC0 (GLB), générateur d'étiquettes d'oreille, tapis d'atterrissage (voir son README). `worlds/prototypes/` contient le générateur de rafales (`wind_gusts.py`) et la cuisson de texture de détail (`cuisson_detail.py`), **pas encore testés dans Gazebo**.
+
 **Performance.** Le monde Medicine Hat fait environ 1 million de triangles et 100 Mo de textures. Facteur temps réel mesuré : 0,65 sous WSL2 (RTX 4060) avec la caméra du gimbal active et d'autres simulations en parallèle.
 
 ## 6. Interop avec un environnement mavros

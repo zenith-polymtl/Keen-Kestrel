@@ -1,0 +1,13 @@
+newmtl tag_recto
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6
+Ns 200
+map_Kd tag_3V_recto.png
+
+newmtl tag_verso
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6
+Ns 200
+map_Kd tag_3V_verso.png
