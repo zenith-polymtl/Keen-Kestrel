@@ -270,7 +270,7 @@ Liste toutes les cibles disponibles — c'est le point d'entrée à consulter en
 `worlds/<site>/site.json` décrit un vrai terrain : origine, emprise, limites, obstacles. `make world` en tire un monde Gazebo avec le relief réel et une orthophoto, et `make sim WORLD=<site>` le lance avec le SITL calé dessus. Le seul site pour l'instant est `medicine_hat` (AEAC 2027, Medicine Hat RC'ers Club).
 
 ```bash
-make world WORLD=medicine_hat        # ≈ 10 min la 1re fois (téléchargements), ≈ 1 min ensuite ; internet requis
+make world WORLD=medicine_hat        # ≈ 10 min la 1re fois (relief à télécharger), ≈ 1 min ensuite ; internet requis
 make sim WORLD=medicine_hat          # SITL + Gazebo + RViz sur le terrain
 make sim WORLD=medicine_hat REPERES=0   # sans les limites dessinées au sol (images pour la vision)
 make check-world WORLD=medicine_hat  # dans un 2e terminal : vol de validation (≈ 3 min)
@@ -279,7 +279,7 @@ make check-world WORLD=medicine_hat  # dans un 2e terminal : vol de validation (
 **Ce que contient le monde**
 
 - **Relief** : NRCan HRDEM 1 m (lidar) là où il existe, ailleurs MRDEM-30 corrigé par les courbes de niveau 1 m de la Ville de Medicine Hat ; ±0,25 m sur l'emprise. Maillages OBJ : tuiles visuelles de 256 m (pas de 2 m sur la zone de mission, 8 m autour) et un maillage de collision à 8 m.
-- **Texture** : Sentinel-2 (10 m, libre) par défaut. Une orthophoto plus fine se passe avec `ORTHO=private/ortho.tif` (GeoTIFF RGB géoréférencé, chemin relatif à `worlds/<site>/`, plusieurs par priorité).
+- **Texture** : les orthophotos listées dans `orthos` de `site.json` (pour Medicine Hat : l'ortho de la Ville du 2024-05-15 via Esri, ≈ 0,19 m, dans `worlds/medicine_hat/ortho/`), complétées par Sentinel-2 (10 m). `ORTHO=autre.tif` remplace la liste (GeoTIFF RGB géoréférencé, chemin relatif à `worlds/<site>/`, plusieurs par priorité). Texture finale : 0,25 m/px sur la zone de mission, 1 m autour.
 - **Repères** (monde `world`, pas `world_clean`) : limite hard en rouge, soft en vert, ligne de vol en jaune, point de décollage en cyan. Visuels seulement, sans collision.
 - **Éoliennes** voisines (OSM), soleil calculé pour la date de la compétition (`--sun`), vent moyen (`--wind`) : options de `worlds/build_world.py` à passer par `WORLD_ARGS="..."`.
 
@@ -288,7 +288,7 @@ make check-world WORLD=medicine_hat  # dans un 2e terminal : vol de validation (
 **Vent.** Avec Gazebo (`--model json`), `SIM_WIND_*` n'a aucun effet. Le vent moyen se règle dans le monde (`WORLD_ARGS='--wind "3.90 2.25"'`, Est Nord en m/s), ou en cours de sim :
 `gz topic -t /world/medicine_hat/wind -m gz.msgs.Wind -p "linear_velocity: {x: 3.9, y: 2.25}, enable_wind: true"`.
 
-**Licences.** Les sorties (`build/`), téléchargements (`cache/`) et orthophotos (`private/`) sont ignorés par git : ce dépôt est public, et une orthophoto sous licence restrictive (Esri World Imagery, par exemple) ne doit jamais y entrer, ni ses textures dérivées. Sources libres utilisées : NRCan (OGL-Canada), City of Medicine Hat (licence ouverte), Copernicus Sentinel-2, OpenStreetMap (ODbL) ; liste dans `build/site_meta.json`.
+**Licences et attributions.** Relief : NRCan (OGL-Canada), City of Medicine Hat (licence ouverte). Ortho : Esri, Vantor, Earthstar Geographics; City of Medicine Hat (conditions Esri, voir `worlds/medicine_hat/ortho/LISEZMOI.md`). Sentinel-2 : Copernicus. Éoliennes : OpenStreetMap (ODbL). Liste dans `build/site_meta.json`. Les sorties (`build/`) et téléchargements (`cache/`) sont ignorés par git : ils se régénèrent.
 
 **Performance.** Le monde Medicine Hat fait environ 1 million de triangles et 100 Mo de textures. Facteur temps réel mesuré : 0,65 sous WSL2 (RTX 4060) avec la caméra du gimbal active et d'autres simulations en parallèle.
 

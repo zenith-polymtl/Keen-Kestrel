@@ -81,12 +81,12 @@ DEFAULTS = $(DEFAULTS_BASE),/ardu_ws/config/sim.parm
 # Son <site>.parm (SIM_OPOS_* = origine du monde) passe avant sim.parm, qui garde le dernier mot.
 WORLD ?=
 REPERES ?= 1     # 1 : limites et ligne de vol dessinées au sol ; 0 : monde propre (images pour la vision)
-ORTHO ?=         # orthophotos, chemins relatifs à worlds/$(WORLD)/, par priorité (ex. private/ortho.tif)
+ORTHO ?=         # orthophotos, chemins relatifs à worlds/$(WORLD)/, par priorité ; vide : orthos de site.json
 WORLD_ARGS ?=    # options de build_world.py (ex. --wind "3.90 2.25" --sun 2027-05-15T10:00:00-06:00)
 WORLD_DEFAULTS = $(DEFAULTS_BASE),/ardu_ws/worlds/$(WORLD)/build/$(WORLD).parm,/ardu_ws/config/sim.parm
 WORLD_SRC = export GZ_SIM_RESOURCE_PATH=$$GZ_SIM_RESOURCE_PATH:/ardu_ws/worlds/$(WORLD)/build/models
 
-world: ## Génère un monde géoréférencé : make world WORLD=medicine_hat [ORTHO=private/ortho.tif] (image Python légère, internet requis)
+world: ## Génère un monde géoréférencé : make world WORLD=medicine_hat [ORTHO=autre.tif] (image Python légère, internet requis)
 	@test -n "$(WORLD)" || { echo "WORLD manquant, ex. : make world WORLD=medicine_hat"; exit 1; }
 	@docker build -q -t keen-kestrel-geotools -f docker/geotools.Dockerfile docker >/dev/null
 	docker run --rm --user $(HOST_UID):$(HOST_GID) -v $(CURDIR)/worlds:/worlds keen-kestrel-geotools \

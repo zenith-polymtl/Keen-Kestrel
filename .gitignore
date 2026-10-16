@@ -4,7 +4,7 @@ log/
 eeprom.bin
 *.parm.bak
 
-# Mondes générés (make world) : sorties, téléchargements, et orthophotos sous licence restrictive.
+# Mondes générés (make world) : sorties et téléchargements, qui se régénèrent ; private/ pour les fichiers locaux.
 worlds/*/build/
 worlds/*/cache/
 worlds/*/private/

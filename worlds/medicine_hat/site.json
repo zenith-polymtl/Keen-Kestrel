@@ -18,6 +18,10 @@
     "north": 1536
   },
   "mission_zone_margin_m": 100,
+  "orthos": {
+    "comment": "Textures par priorité décroissante, chemins relatifs à ce dossier ; Sentinel-2 complète le reste. Voir ortho/LISEZMOI.md (attribution). --ortho remplace cette liste.",
+    "files": ["ortho/esri_world_imagery_z19_epsg3857.tif", "ortho/esri_world_imagery_z18_epsg3857.tif"]
+  },
   "hard_boundary": [
     [50.0970884, -110.7328077],
     [50.1061216, -110.7327756],

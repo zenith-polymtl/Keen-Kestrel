@@ -20,7 +20,7 @@ lat/lon = home + position Gazebo, il ne lit jamais <spherical_coordinates>. Les 
 donc être identiques, et le sol vaut z = 0 à l'origine.
 
 Les sorties vont dans worlds/<site>/build/ et les téléchargements dans worlds/<site>/cache/,
-tous deux ignorés par git : les orthophotos peuvent être sous licence restrictive.
+tous deux ignorés par git : ils se régénèrent. Les orthophotos sources sont dans worlds/<site>/ortho/.
 """
 import argparse
 import json
@@ -612,7 +612,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("site", help="dossier du site (contient site.json)")
     ap.add_argument("--ortho", action="append", default=[],
-                    help="GeoTIFF RGB géoréférencé, par priorité décroissante (répétable). Sentinel-2 complète.")
+                    help="GeoTIFF RGB géoréférencé, par priorité décroissante (répétable) ; remplace "
+                         "orthos.files de site.json. Sentinel-2 complète.")
     ap.add_argument("--sun", default="2027-05-15T15:00:00-06:00", help="date et heure locales pour le soleil (ISO 8601)")
     ap.add_argument("--wind", default="0 0", help="vent moyen 'Est Nord' en m/s (ex. '3.90 2.25' : 4,5 m/s du 240°)")
     ap.add_argument("--refresh", action="store_true", help="retélécharger le relief et Sentinel-2")
@@ -627,7 +628,8 @@ def main():
 
     print("2/5 texture")
     s2_path, s2 = fetch_sentinel2(site, args.refresh)
-    orthos = [site.dir / p if not Path(p).is_absolute() else Path(p) for p in args.ortho]
+    orthos = [site.dir / p if not Path(p).is_absolute() else Path(p)
+              for p in (args.ortho or site.cfg.get("orthos", {}).get("files", []))]
     mosaic, mres, used = ortho_mosaic(site, orthos, s2_path)
     for p, frac in used:
         print(f"  {Path(p).name} : {100 * frac:.1f} % de l'emprise")
@@ -668,7 +670,7 @@ def main():
                              "City of Medicine Hat, courbes de niveau 1 m : City of Medicine Hat Open Data Licence",
                              "Contains modified Copernicus Sentinel data",
                              "OpenStreetMap contributors (éoliennes) : ODbL"] +
-                            [f"Orthophoto {Path(p).name} : vérifier sa licence avant toute diffusion" for p in args.ortho])
+                            [f"Orthophoto {p.name} : voir le LISEZMOI de son dossier" for p in orthos])
     (site.build / "site_meta.json").write_text(json.dumps(meta, indent=1, ensure_ascii=False))
     print(f"  soleil az {sun[0]:.1f}° él {sun[1]:.1f}° ; sorties dans {site.build}")
 
