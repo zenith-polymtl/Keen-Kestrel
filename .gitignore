@@ -3,3 +3,9 @@ log/
 *.tlog*
 eeprom.bin
 *.parm.bak
+
+# Mondes générés (make world) : sorties, téléchargements, et orthophotos sous licence restrictive.
+worlds/*/build/
+worlds/*/cache/
+worlds/*/private/
+__pycache__/

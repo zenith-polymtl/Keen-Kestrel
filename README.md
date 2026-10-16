@@ -255,13 +255,42 @@ Liste toutes les cibles disponibles — c'est le point d'entrée à consulter en
 | `up` | Démarre le conteneur `sim` en arrière-plan |
 | `down` | Arrête et retire le conteneur `sim` |
 | `init` | Initialise le workspace ROS 2 (1er run long, relançable ; `COLCON_JOBS=N` pour ajuster) |
-| `sim` | Lance SITL + Gazebo + RViz (`iris_runway`), params : `config/sim.parm` |
+| `sim` | Lance SITL + Gazebo + RViz (`iris_runway`, ou `WORLD=medicine_hat [REPERES=0]`), params : `config/sim.parm` |
+| `world` | Génère un monde géoréférencé : `make world WORLD=medicine_hat [ORTHO=...]` (voir §5.6) |
+| `check-world` | Pendant `make sim WORLD=...` : vérifie GPS SITL = Gazebo, vol et atterrissage sur le relief |
 | `sitl` | Lance SITL + DDS seul, sans Gazebo |
 | `mavproxy` | Ouvre une console MAVProxy (console + carte) sur le SITL local |
 | `shell` | Ouvre un shell interactif dans le conteneur, ROS + workspace sourcés |
 | `test` | Smoke-tests : OpenGL, Gazebo headless, DDS-Gen, MAVProxy |
 | `clean-eeprom` | Supprime l'eeprom SITL : les params reviennent aux defaults + `sim.parm` |
 | `clean` | Down + supprime le volume `ardu_ws` (destructif, confirmation requise) |
+
+### 5.6 Mondes géoréférencés (site de compétition)
+
+`worlds/<site>/site.json` décrit un vrai terrain : origine, emprise, limites, obstacles. `make world` en tire un monde Gazebo avec le relief réel et une orthophoto, et `make sim WORLD=<site>` le lance avec le SITL calé dessus. Le seul site pour l'instant est `medicine_hat` (AEAC 2027, Medicine Hat RC'ers Club).
+
+```bash
+make world WORLD=medicine_hat        # ≈ 10 min la 1re fois (téléchargements), ≈ 1 min ensuite ; internet requis
+make sim WORLD=medicine_hat          # SITL + Gazebo + RViz sur le terrain
+make sim WORLD=medicine_hat REPERES=0   # sans les limites dessinées au sol (images pour la vision)
+make check-world WORLD=medicine_hat  # dans un 2e terminal : vol de validation (≈ 3 min)
+```
+
+**Ce que contient le monde**
+
+- **Relief** : NRCan HRDEM 1 m (lidar) là où il existe, ailleurs MRDEM-30 corrigé par les courbes de niveau 1 m de la Ville de Medicine Hat ; ±0,25 m sur l'emprise. Maillages OBJ : tuiles visuelles de 256 m (pas de 2 m sur la zone de mission, 8 m autour) et un maillage de collision à 8 m.
+- **Texture** : Sentinel-2 (10 m, libre) par défaut. Une orthophoto plus fine se passe avec `ORTHO=private/ortho.tif` (GeoTIFF RGB géoréférencé, chemin relatif à `worlds/<site>/`, plusieurs par priorité).
+- **Repères** (monde `world`, pas `world_clean`) : limite hard en rouge, soft en vert, ligne de vol en jaune, point de décollage en cyan. Visuels seulement, sans collision.
+- **Éoliennes** voisines (OSM), soleil calculé pour la date de la compétition (`--sun`), vent moyen (`--wind`) : options de `worlds/build_world.py` à passer par `WORLD_ARGS="..."`.
+
+**Alignement avec le SITL.** Avec Gazebo, ArduPilot ne lit pas le monde : il calcule sa position GPS comme `home + position Gazebo`. L'origine du monde est donc le home du SITL, fixé par `SIM_OPOS_*` dans `worlds/<site>/build/<site>.parm`, placé avant `config/sim.parm` dans la chaîne `--defaults`. Ces valeurs sont des float32 exacts, identiques à `<spherical_coordinates>` : pas d'arrondi entre les deux. Le sol vaut z = 0 à l'origine. Validé par `check-world` : écart GPS-Gazebo de 0,01 m au sol et < 1 m à 800 m, atterrissage sur le relief à 1 cm près.
+
+**Vent.** Avec Gazebo (`--model json`), `SIM_WIND_*` n'a aucun effet. Le vent moyen se règle dans le monde (`WORLD_ARGS='--wind "3.90 2.25"'`, Est Nord en m/s), ou en cours de sim :
+`gz topic -t /world/medicine_hat/wind -m gz.msgs.Wind -p "linear_velocity: {x: 3.9, y: 2.25}, enable_wind: true"`.
+
+**Licences.** Les sorties (`build/`), téléchargements (`cache/`) et orthophotos (`private/`) sont ignorés par git : ce dépôt est public, et une orthophoto sous licence restrictive (Esri World Imagery, par exemple) ne doit jamais y entrer, ni ses textures dérivées. Sources libres utilisées : NRCan (OGL-Canada), City of Medicine Hat (licence ouverte), Copernicus Sentinel-2, OpenStreetMap (ODbL) ; liste dans `build/site_meta.json`.
+
+**Performance.** Le monde Medicine Hat fait environ 1 million de triangles et 100 Mo de textures. Facteur temps réel mesuré : 0,65 sous WSL2 (RTX 4060) avec la caméra du gimbal active et d'autres simulations en parallèle.
 
 ## 6. Interop avec un environnement mavros
 

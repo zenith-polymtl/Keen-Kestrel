@@ -24,6 +24,7 @@ services:
     volumes:
       - ardu_ws:/ardu_ws
       - ./config:/ardu_ws/config:ro   # sim.parm éditable sur l'hôte, lu au boot du SITL
+      - ./worlds:/ardu_ws/worlds:ro   # mondes générés par `make world` (sorties dans worlds/<site>/build)
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ${XAUTHORITY:-$HOME/.Xauthority}:/home/dev/.Xauthority:ro
     command: sleep infinity

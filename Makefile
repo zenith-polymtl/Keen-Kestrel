@@ -29,7 +29,7 @@ SRC = source /opt/ros/humble/setup.bash && if [ -f /ardu_ws/install/setup.bash ]
 
 EXEC = docker compose exec sim bash -lc
 
-.PHONY: help host-deps setup configure build up down init ready sim sitl mavproxy shell test clean clean-eeprom
+.PHONY: help host-deps setup configure build up down init ready world check-world sim sitl mavproxy shell test clean clean-eeprom
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*##"}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -74,13 +74,37 @@ ready: up
 # dernier (le dernier gagne). L'eeprom persistant (/ardu_ws/eeprom.bin) garde toutefois
 # priorité pour tout param déjà modifié via GCS — voir clean-eeprom.
 SITL_SHARE = /ardu_ws/install/ardupilot_sitl/share/ardupilot_sitl/config/default_params
-DEFAULTS = $(SITL_SHARE)/copter.parm,$(AP_SHARE)/ardupilot_gazebo/config/gazebo-iris-gimbal.parm,$(SITL_SHARE)/dds_udp.parm,$(SITL_SHARE)/dds_use_ns.parm,/ardu_ws/config/sim.parm
+DEFAULTS_BASE = $(SITL_SHARE)/copter.parm,$(AP_SHARE)/ardupilot_gazebo/config/gazebo-iris-gimbal.parm,$(SITL_SHARE)/dds_udp.parm,$(SITL_SHARE)/dds_use_ns.parm
+DEFAULTS = $(DEFAULTS_BASE),/ardu_ws/config/sim.parm
 
-sim: ready ## Lance SITL + Gazebo + RViz (iris_runway), params: config/sim.parm
+# Monde géoréférencé généré par `make world` (worlds/$(WORLD)/site.json). Vide : iris_runway d'origine.
+# Son <site>.parm (SIM_OPOS_* = origine du monde) passe avant sim.parm, qui garde le dernier mot.
+WORLD ?=
+REPERES ?= 1     # 1 : limites et ligne de vol dessinées au sol ; 0 : monde propre (images pour la vision)
+ORTHO ?=         # orthophotos, chemins relatifs à worlds/$(WORLD)/, par priorité (ex. private/ortho.tif)
+WORLD_ARGS ?=    # options de build_world.py (ex. --wind "3.90 2.25" --sun 2027-05-15T10:00:00-06:00)
+WORLD_DEFAULTS = $(DEFAULTS_BASE),/ardu_ws/worlds/$(WORLD)/build/$(WORLD).parm,/ardu_ws/config/sim.parm
+WORLD_SRC = export GZ_SIM_RESOURCE_PATH=$$GZ_SIM_RESOURCE_PATH:/ardu_ws/worlds/$(WORLD)/build/models
+
+world: ## Génère un monde géoréférencé : make world WORLD=medicine_hat [ORTHO=private/ortho.tif] (image Python légère, internet requis)
+	@test -n "$(WORLD)" || { echo "WORLD manquant, ex. : make world WORLD=medicine_hat"; exit 1; }
+	@docker build -q -t keen-kestrel-geotools -f docker/geotools.Dockerfile docker >/dev/null
+	docker run --rm --user $(HOST_UID):$(HOST_GID) -v $(CURDIR)/worlds:/worlds keen-kestrel-geotools \
+	  python build_world.py $(WORLD) $(foreach o,$(ORTHO),--ortho $(o)) $(WORLD_ARGS)
+
+sim: ready ## Lance SITL + Gazebo + RViz (iris_runway, ou WORLD=medicine_hat [REPERES=0]), params: config/sim.parm
+ifeq ($(strip $(WORLD)),)
 	$(EXEC) '$(SRC) && ros2 launch ardupilot_gz_bringup iris_runway.launch.py defaults:=$(DEFAULTS)'
+else
+	@test -f worlds/$(WORLD)/build/world.sdf || $(MAKE) --no-print-directory world
+	$(EXEC) '$(SRC) && $(WORLD_SRC) && ros2 launch /ardu_ws/worlds/world.launch.py site:=$(WORLD) world_file:=$(if $(filter 0,$(strip $(REPERES))),world_clean,world) defaults:=$(WORLD_DEFAULTS)'
+endif
 
 sitl: ready ## Lance SITL + DDS seul, sans Gazebo
 	$(EXEC) '$(SRC) && ros2 launch ardupilot_sitl sitl_dds_udp.launch.py transport:=udp4 synthetic_clock:=True wipe:=False model:=quad speedup:=1 slave:=0 instance:=0 defaults:=$$(ros2 pkg prefix ardupilot_sitl)/share/ardupilot_sitl/config/default_params/copter.parm,$$(ros2 pkg prefix ardupilot_sitl)/share/ardupilot_sitl/config/default_params/dds_udp.parm,/ardu_ws/config/sim.parm sim_address:=127.0.0.1 master:=tcp:127.0.0.1:5760 sitl:=127.0.0.1:5501'
+
+check-world: up ## Vérifie le monde WORLD pendant que `make sim WORLD=...` tourne : GPS SITL = Gazebo, vol, atterrissage sur le relief
+	$(EXEC) '$(SRC) && python3 /ardu_ws/worlds/check_world.py $(WORLD)'
 
 mavproxy: up ## Ouvre une console MAVProxy (console + carte) sur le SITL local
 	$(EXEC) '$(SRC) && mavproxy.py --console --map --master=:14550'

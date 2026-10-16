@@ -1,0 +1,48 @@
+{
+  "name": "medicine_hat",
+  "description": "AEAC 2027, Phase 2 : Medicine Hat RC'ers Club, Len Young Memorial Field (5260 Box Springs Rd NW, Medicine Hat, Alberta). Vol du 2027-05-14 au 2027-05-16.",
+  "sources": {
+    "boundaries": "Carte Google My Maps « 2027 AEAC Phase 2 » liée par le CONOPS v1.0 §5.2.1 (export KML, relevé le 2026-10-15). La limite hard est identique à l'Annexe C du CONOPS ; la limite soft, la ligne de vol et le point de décollage ne sont que sur la carte.",
+    "turbines": "OpenStreetMap (power=generator, Gamesa G90 : tour 78 m, rotor 90 m), relevé le 2026-10-15."
+  },
+  "origin": {
+    "comment": "Point « Takeoff & Landing » de la carte My Maps. build_world.py l'arrondit en float32 (environ 0,2 m) pour que SIM_OPOS_LAT/LNG, qui sont des float32, tombent exactement sur l'origine du monde.",
+    "lat": 50.0973425,
+    "lon": -110.7352315
+  },
+  "extent_m": {
+    "comment": "Emprise du terrain autour de l'origine, en mètres Est/Nord. Le polygone va d'environ -615 à +175 m en Est et de -25 à +980 m en Nord.",
+    "west": -1024,
+    "east": 1024,
+    "south": -512,
+    "north": 1536
+  },
+  "mission_zone_margin_m": 100,
+  "hard_boundary": [
+    [50.0970884, -110.7328077],
+    [50.1061216, -110.7327756],
+    [50.1061482, -110.7437887],
+    [50.1035232, -110.7437798],
+    [50.0988785, -110.7382540],
+    [50.0971194, -110.7382533]
+  ],
+  "soft_boundary": [
+    [50.0971537, -110.7329257],
+    [50.1060519, -110.7328869],
+    [50.1060793, -110.7436756],
+    [50.1035452, -110.7436555],
+    [50.0989139, -110.7381534],
+    [50.0971788, -110.7381487]
+  ],
+  "flight_line": [
+    [50.0968816, -110.7361082],
+    [50.0968533, -110.7361082],
+    [50.0968550, -110.7353693],
+    [50.0968816, -110.7353692]
+  ],
+  "takeoff": [50.0973425, -110.7352315],
+  "turbines": [
+    {"name": "BSW1", "lat": 50.1049844, "lon": -110.7274980, "hub_m": 78.0, "rotor_d_m": 90.0},
+    {"name": "BSW2", "lat": 50.0999634, "lon": -110.7273550, "hub_m": 78.0, "rotor_d_m": 90.0}
+  ]
+}
